@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>卡片列表 - 模拟实际场景选择任意卡片放在读卡器上的操作</title>
+    <style>
+      .list {
+        margin: 100px auto;
+        width: 300px;
+      }
+
+      .list-item {
+        border-radius: 8px;
+        box-shadow: 2px 2px 5px #ddd;
+        padding: 20px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+      }
+
+      .list-item.selected {
+        border-color: white;
+        box-shadow: 2px 2px 5px firebrick;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="list">
+      <div
+        class="list-item selected"
+        id="card1"
+        data-card-no="A424C-15AE4-DA451"
+      >
+        卡号：<span class="card-no">A424C-15AE4-DA451</span>
+      </div>
+
+      <div class="list-item" id="card2" data-card-no="56782-DAQG4-Q456A">
+        卡号：<span class="card-no">56782-DAQG4-Q456A</span>
+      </div>
+
+      <div class="list-item" id="card3" data-card-no="45QG2-12AQE-15ADG">
+        卡号：<span class="card-no">45QG2-12AQE-15ADG</span>
+      </div>
+    </div>
+
+    <script>
+      // You can also require other files to run in this process
+      var socket = require("./renderer.js");
+      var selected = getSelected();
+
+      function initElements() {
+        var els = document.getElementsByClassName("list-item");
+
+        for (var i = 0, l = els.length; i < l; i++) {
+          var el = els[i];
+
+          el.onclick = function() {
+            if (selected) {
+              document.getElementById(selected).classList.remove("selected");
+            }
+
+            selected = this.id;
+
+            this.classList.add("selected");
+          };
+        }
+      }
+
+      function getSelected() {
+        if (!selected) {
+          selected = document.querySelector(".list-item").id;
+        }
+
+        return selected;
+      }
+
+      socket.on("req-read", function() {
+        var id = getSelected();
+
+        var el = document.getElementById(id);
+
+        var card = el.dataset.cardNo;
+
+        socket.emit("res-read", {
+          errcode: 0,
+          card: card
+        });
+      });
+
+      function initSocket() {
+        socket.on("req-write", function(data) {
+          console.log("list data: ", data);
+          var card = data.card || "";
+
+          var arr = card
+            .toUpperCase()
+            .replace("-", "")
+            .split("");
+
+          for (var i = 0, l = arr.length; i < l; i += 5) {
+            if (i > 0) {
+              arr[i] = "-" + arr[i];
+            }
+          }
+
+          var str = arr.join("");
+
+          var id = getSelected();
+
+          var el = document.getElementById(id);
+
+          el.setAttribute("data-card-no", str);
+          el.querySelector(".card-no").innerHTML = str;
+
+          socket.emit("res-write", { errcode: 0, card: str });
+        });
+      }
+
+      function init() {
+        initElements();
+
+        initSocket();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

@@ -1,19 +1,90 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <meta charset="UTF-8" />
+    <title>读写操作 - 模拟实际网页中对卡片进行读写操作</title>
+    <style>
+      .container {
+        margin: 100px auto;
+        width: 300px;
+      }
+      .form {
+        border-radius: 8px;
+        box-shadow: 2px 2px 5px #ddd;
+        padding: 20px;
+        /* margin: 100px auto; */
+        width: 200px;
+      }
+
+      .red-text {
+        color: red;
+      }
+    </style>
   </head>
   <body>
-    <h1>Hello World!</h1>
-    <!-- All of the Node.js APIs are available in this renderer process. -->
-    We are using Node.js <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
+    <div class="container">
+      <div class="form">
+        <input id="read-info" disabled /><button id="read">读卡</button>
+        <br />
+        <br />
+        <input id="write-info" /><button id="write">写卡</button>
+      </div>
+      <br />
+      <br />
+      <small id="message"></small>
+    </div>
 
     <script>
       // You can also require other files to run in this process
-      require('./renderer.js')
+      var socket = require("./renderer.js");
+
+      function initElements() {
+        document.getElementById("read").onclick = function() {
+          socket.emit("req-read");
+        };
+
+        document.getElementById("write").onclick = function() {
+          var card = document.getElementById("write-info").value;
+
+          socket.emit("req-write", {
+            card: card
+          });
+        };
+      }
+
+      function initSockets() {
+        socket.on("res-read", function(data) {
+          console.log("socket message data: ", data);
+
+          document.getElementById("read-info").value = data.card;
+
+          var innerHTML =
+            document.getElementById("message").innerHTML +
+            '<span>卡号：<span class="red-text">' +
+            data.card +
+            "</span>读取成功</span><br />";
+
+          document.getElementById("message").innerHTML = innerHTML;
+        });
+
+        socket.on("res-write", function(data) {
+          console.log("socket message data: ", data);
+
+          var innerHTML =
+            document.getElementById("message").innerHTML +
+            '<span>卡号：<span class="red-text">' +
+            data.card +
+            "</span>写入成功</span><br />";
+          document.getElementById("message").innerHTML = innerHTML;
+        });
+      }
+
+      function init() {
+        initElements();
+        initSockets();
+      }
+
+      init();
     </script>
   </body>
 </html>
