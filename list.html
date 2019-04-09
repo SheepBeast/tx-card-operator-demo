@@ -21,6 +21,10 @@
         border-color: white;
         box-shadow: 2px 2px 5px firebrick;
       }
+
+      .red-text {
+        color: red;
+      }
     </style>
   </head>
   <body>
@@ -40,12 +44,52 @@
       <div class="list-item" id="card3" data-card-no="45QG2-12AQE-15ADG">
         卡号：<span class="card-no">45QG2-12AQE-15ADG</span>
       </div>
+
+      <br />
+
+      <small id="message"></small>
     </div>
 
     <script>
       // You can also require other files to run in this process
       var socket = require("./renderer.js");
+      document.getElementById("message").innerHTML = "连接socket服务成功，地址为 http://127.0.0.1:3000"
+
+      
       var selected = getSelected();
+
+      function log(str) {
+        var el = document.getElementById("message");
+        var innerHTML = el.innerHTML + str;
+        el.innerHTML = innerHTML;
+      }
+
+      function clear() {
+        document.getElementById("message").innerHTML = "";
+      }
+
+      function tpl_req(eventName, cardNo) {
+        clear();
+        var head = `<p>2. 监听到事件：<span class="red-text">req-${eventName}</span>`;
+
+        var body = cardNo ? `，卡号为：${cardNo}` : "";
+
+        var foot = "</p>";
+
+        return head + body + foot;
+      }
+
+      function tpl_res(eventName, cardNo) {
+        var head = `<p>3. 响应事件：<span class="red-text">res-${eventName}</span>，`;
+
+        var body =
+          (eventName === "read" ? "读取卡号" : `写入卡号：`) +
+          `<span class="red-text">${cardNo}</span>`;
+
+        var foot = "成功</p>";
+
+        return head + body + foot;
+      }
 
       function initElements() {
         var els = document.getElementsByClassName("list-item");
@@ -73,23 +117,28 @@
         return selected;
       }
 
-      socket.on("req-read", function() {
-        var id = getSelected();
-
-        var el = document.getElementById(id);
-
-        var card = el.dataset.cardNo;
-
-        socket.emit("res-read", {
-          errcode: 0,
-          card: card
-        });
-      });
-
       function initSocket() {
+        socket.on("req-read", function() {
+          log(tpl_req("read"));
+
+          var id = getSelected();
+
+          var el = document.getElementById(id);
+
+          var card = el.dataset.cardNo;
+
+          socket.emit("res-read", {
+            errcode: 0,
+            card: card
+          });
+
+          log(tpl_res("read", card));
+        });
+
         socket.on("req-write", function(data) {
-          console.log("list data: ", data);
           var card = data.card || "";
+
+          log(tpl_req("write", card));
 
           var arr = card
             .toUpperCase()
@@ -112,6 +161,8 @@
           el.querySelector(".card-no").innerHTML = str;
 
           socket.emit("res-write", { errcode: 0, card: str });
+
+          log(tpl_res("write", card));
         });
       }
 

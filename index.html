@@ -13,7 +13,7 @@
         box-shadow: 2px 2px 5px #ddd;
         padding: 20px;
         /* margin: 100px auto; */
-        width: 200px;
+        width: 240px;
       }
 
       .red-text {
@@ -38,9 +38,53 @@
       // You can also require other files to run in this process
       var socket = require("./renderer.js");
 
+      document.getElementById("message").innerHTML = "连接socket服务成功，地址为 http://127.0.0.1:3000"
+
+
+
+      function log(str) {
+        var innerHTML = document.getElementById("message").innerHTML + str;
+
+        document.getElementById("message").innerHTML = innerHTML;
+      }
+
+      function clear() {
+        document.getElementById("message").innerHTML = "";
+      } 
+
+      function tpl_req(eventName, cardNo) {
+        clear()
+
+        var head = `<p>1. 发起事件：<span class="red-text">req-${eventName}</span>，`;
+
+        var body =
+          "请求" +
+          (eventName === "read"
+            ? "读取卡号"
+            : `写入卡号：<span class="red-text">${cardNo}</span>`);
+
+        var foot = "</p>";
+
+        return head + body + foot;
+      }
+
+      function tpl_res(eventName, cardNo) {
+        var head = `<p>4. 监听到事件：<span class="red-text">res-${eventName}</span>，`;
+
+        var body =
+          (eventName === "read" ? "读取卡号" : `写入卡号：`) +
+          `<span class="red-text">${cardNo}</span>`;
+
+        var foot = "成功</p>";
+
+        return head + body + foot;
+      }
+
       function initElements() {
         document.getElementById("read").onclick = function() {
           socket.emit("req-read");
+
+          log(tpl_req("read"));
         };
 
         document.getElementById("write").onclick = function() {
@@ -49,6 +93,8 @@
           socket.emit("req-write", {
             card: card
           });
+
+          log(tpl_req("write", card));
         };
       }
 
@@ -58,33 +104,28 @@
 
           document.getElementById("read-info").value = data.card;
 
-          var innerHTML =
-            document.getElementById("message").innerHTML +
-            '<span>卡号：<span class="red-text">' +
-            data.card +
-            "</span>读取成功</span><br />";
-
-          document.getElementById("message").innerHTML = innerHTML;
+          log(tpl_res("read", data.card));
         });
 
         socket.on("res-write", function(data) {
-          console.log("socket message data: ", data);
-
-          var innerHTML =
-            document.getElementById("message").innerHTML +
-            '<span>卡号：<span class="red-text">' +
-            data.card +
-            "</span>写入成功</span><br />";
-          document.getElementById("message").innerHTML = innerHTML;
+          log(tpl_res("write", data.card));
         });
       }
 
       function init() {
         initElements();
+
+   
+
+
         initSockets();
+
+        
       }
 
       init();
+
+
     </script>
   </body>
 </html>
